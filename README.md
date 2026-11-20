@@ -1,69 +1,98 @@
-# Musea — Phase 1 starter
+# VELORA — Virtual Exhibition World
 
-## Included
-- React + Vite
-- Three.js via React Three Fiber
-- Five-floor gallery concept and floor selector
-- Desktop pointer-lock movement (WASD, mouse, Shift)
-- Google sign-in placeholder via Firebase Authentication
-- PWA manifest + service worker shell
+> **A World Beyond Walls.**
+
+VELORA is a 3D virtual exhibition world built as a Progressive Web App (PWA). Visitors can explore a five-floor gallery, with three independent exhibition zones on every floor.
+
+## Current Phase 1
+
+- Five-floor 3D exhibition building
+- Three exhibition zones per floor: A / West Wing, B / North Wing, C / East Wing
+- Central public hall, reception/lounge, artwork walls, sculptures, benches and plants
+- Floor and gallery quick-navigation panel
+- Desktop WASD / arrow-key movement, mouse look and Shift sprint
+- Firebase Google Authentication integration point
+- GitHub Pages deployment via GitHub Actions
+- PWA manifest and service worker foundation
+
+**Movement tuning is intentionally preserved** in this version because the current WASD feel has been approved. Do not change `ExplorerMovement` unless a movement-specific issue is reported.
+
+## Floor Plan
+
+| Floor | Main use | Zones |
+|---|---|---|
+| 5F | Featured Exhibition | Curated collection / annual theme / special curation |
+| 4F | Community Gallery III | User exhibition A / B / C |
+| 3F | Community Gallery II | User exhibition A / B / C |
+| 2F | Community Gallery I | User exhibition A / B / C |
+| 1F | Main Lobby | Welcome gallery / emerging creators / themed works |
+
+Floors 2F–4F are planned as rotating user exhibition areas. Daily or weekly rotation and user-uploaded exhibitions will be implemented in Phase 2.
 
 ## Run locally
-1. Install Node.js (LTS).
-2. Extract this project.
-3. In the project folder run:
-   ```bash
-   npm install
-   npm run dev
-   ```
-4. Open the local Vite URL.
 
-## Enable Google login
-1. Create a Firebase project.
-2. Add a Web App and copy its Firebase config.
-3. Replace placeholder values in `src/firebase.js`.
-4. In Firebase Console, Authentication → Sign-in method, enable Google.
-5. Add your development and deployment domains to Authentication → Settings → Authorized domains.
+1. Install Node.js LTS.
+2. Run `npm install`.
+3. Copy `.env.example` to `.env.local` and fill in the Firebase Web App values (see **Firebase setup** below).
+4. Run `npm run dev`.
 
-Until Firebase is configured, use **先探索展示模式** to preview the gallery UI.
+## Firebase Google Authentication setup
 
-## Phase 1 next tasks
-- Replace placeholder gallery geometry with designed modular floors, stair/elevator connection and lobby.
-- Add real vertical movement between floors (currently floor selector changes gallery level).
-- Add mobile touch joystick and touch-look.
-- Optimize assets, loading and low-end device settings.
-- Add a privacy-conscious account/profile page and production authentication flow.
+1. Create a Firebase project at the Firebase Console.
+2. Add a **Web App** to the project and copy its Firebase config.
+3. In **Authentication → Sign-in method**, enable **Google**.
+4. In **Authentication → Settings → Authorized domains**, add `yunn526.github.io` and your local development host if needed.
+5. For local development, put the Web App values into `.env.local` using the names in `.env.example`.
+6. For GitHub Pages, open **Repository → Settings → Secrets and variables → Actions → Variables** and add these repository variables:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+7. Push a commit to `main` to trigger a fresh deployment.
 
-## Notes
-This is an early scaffold, not a production-ready app. Floor switching is currently a prototype teleport. The gallery geometry is intentionally simple to keep the initial build lightweight.
+Firebase Web App configuration is intended to be present in the client. Protect the project with Firebase Authentication settings and, when Firestore/Storage are added in later phases, restrictive Security Rules. Never place service-account private keys in frontend variables.
 
-## GitHub Pages Deployment
+Until the Firebase values are configured and deployed, the Google login button will explain that setup is pending; the **Preview mode** remains available for testing the 3D gallery.
 
-This repository uses GitHub Actions to build and deploy Vite to Pages.
+## GitHub Pages deployment
 
-1. Push the project files to the `main` branch.
-2. In GitHub, open **Settings → Pages**.
-3. Set **Build and deployment → Source** to **GitHub Actions**.
-4. Push a new commit or run the workflow manually from **Actions**.
-5. After the workflow succeeds, open:
-   `https://yunn526.github.io/velora-virtual-world/`
+This repository is configured for `https://yunn526.github.io/velora-virtual-world/`.
 
-The Vite `base` path is configured for this repository's Pages URL.
+- GitHub → Settings → Pages → Source must be **GitHub Actions**.
+- Workflow: `.github/workflows/deploy.yml`
+- Vite base path: `/velora-virtual-world/`
 
-## Important: GitHub Pages must deploy the Vite build
+The workflow builds the Vite app and deploys only the generated `dist/` directory. Do not publish the repository root directly.
 
-Do **not** publish the repository root directly. The root `index.html` is a Vite source file and references `src/main.jsx`. GitHub Pages must publish the generated `dist/` folder using the workflow in `.github/workflows/deploy.yml`.
+## Planned phases
 
-If Actions only shows the default **pages build and deployment** workflow, verify that `.github/workflows/deploy.yml` exists on the `main` branch and that the custom workflow has run successfully.
+- **Phase 1:** 3D world, five floors, three zones per floor, movement, PWA foundation and Google authentication.
+- **Phase 2:** User exhibitions, artwork uploads, exhibition editing, expiry and admin scheduling.
+- **Phase 3:** Daily check-in, seven-day new-user rewards, gems and leaderboards.
+- **Phase 4:** Furniture shop and customizable exhibition spaces.
+- **Phase 5:** Co-curation, invitations and official exhibitions.
+- **Phase 6:** FREE / PRO membership and subscription management. PRO access is initially granted by the administrator; payments are not part of the initial build.
 
+## Project structure
 
-## Updated spatial layout
-
-The expanded gallery prototype uses a larger floor plate with three distinct enclosed exhibition wings on every floor:
-
-- **Zone A — West Wing:** large independent gallery room.
-- **Zone B — North Wing:** independent gallery room for featured or rotating content.
-- **Zone C — East Wing:** large independent gallery room.
-- **Central Hall:** shared public circulation area with reception/lounge, elevator lobby and staircase.
-
-The floor navigation panel includes quick-jump controls for the three exhibition zones. The existing WASD movement tuning has intentionally been left unchanged for a later refinement pass.
+```text
+velora-virtual-world/
+├── .github/workflows/deploy.yml
+├── public/
+│   ├── favicon.svg
+│   ├── manifest.webmanifest
+│   └── sw.js
+├── src/
+│   ├── App.jsx
+│   ├── World.jsx
+│   ├── firebase.js
+│   ├── main.jsx
+│   └── style.css
+├── .env.example
+├── .gitignore
+├── index.html
+├── package.json
+└── vite.config.js
+```
