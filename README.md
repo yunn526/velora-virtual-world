@@ -55,3 +55,15 @@ The Vite `base` path is configured for this repository's Pages URL.
 Do **not** publish the repository root directly. The root `index.html` is a Vite source file and references `src/main.jsx`. GitHub Pages must publish the generated `dist/` folder using the workflow in `.github/workflows/deploy.yml`.
 
 If Actions only shows the default **pages build and deployment** workflow, verify that `.github/workflows/deploy.yml` exists on the `main` branch and that the custom workflow has run successfully.
+
+
+## Updated spatial layout
+
+The expanded gallery prototype uses a larger floor plate with three distinct enclosed exhibition wings on every floor:
+
+- **Zone A — West Wing:** large independent gallery room.
+- **Zone B — North Wing:** independent gallery room for featured or rotating content.
+- **Zone C — East Wing:** large independent gallery room.
+- **Central Hall:** shared public circulation area with reception/lounge, elevator lobby and staircase.
+
+The floor navigation panel includes quick-jump controls for the three exhibition zones. The existing WASD movement tuning has intentionally been left unchanged for a later refinement pass.
