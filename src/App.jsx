@@ -29,7 +29,7 @@ export default function App(){
 
   if(!authReady) return <div className="loading">正在準備展館…</div>;
   if(!user) return <main className="welcome">
-    <div className="welcome-art"><div className="art-ring ring1"/><div className="art-ring ring2"/><div className="art-caption">MUSEA<br/><span>EXHIBITION WORLD</span></div></div>
+    <div className="welcome-art"><div className="art-ring ring1"/><div className="art-ring ring2"/><div className="art-caption">VELORA<br/><span>EXHIBITION WORLD</span></div></div>
     <section className="welcome-copy"><div className="eyebrow">A WORLD BUILT FOR EXHIBITIONS</div><h1>Every story<br/>deserves a space.</h1><p>走進一座可以自由探索的虛擬美術館。<br/>在這裡，每一層都有不同的故事。</p><button className="primary" onClick={login}>使用 Google 登入</button><button className="secondary" onClick={enterDemo}>先探索展示模式</button><small>展示模式不會保存帳號或個人資料。</small></section>
   </main>;
 
@@ -43,7 +43,7 @@ export default function App(){
       <World floor={floor} />
       <PointerLockControls />
     </Canvas>
-    <header className="hud topbar"><div className="brand">MUSEA <span>EXHIBITION WORLD</span></div><div className="account"><span>{user.displayName||user.email||'Explorer'}</span><button onClick={logout}>登出</button></div></header>
+    <header className="hud topbar"><div className="brand">VELORA <span>EXHIBITION WORLD</span></div><div className="account"><span>{user.displayName||user.email||'Explorer'}</span><button onClick={logout}>登出</button></div></header>
     <aside className="floor-panel"><div className="eyebrow">EXPLORE FLOORS</div>{floors.slice().reverse().map(f=><button key={f.n} className={floor===f.n?'active':''} onClick={()=>setFloor(f.n)}><b>{f.n}F</b><span>{f.zh}</span></button>)}</aside>
     <div className="bottom-hint"><span>點擊畫面進入自由視角</span><kbd>W A S D</kbd><span>移動</span><kbd>SHIFT</kbd><span>加速</span><kbd>ESC</kbd><span>退出視角</span></div>
     <button className="help" onClick={()=>setShowControls(v=>!v)}>?</button>

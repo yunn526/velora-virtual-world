@@ -1,9 +1,8 @@
 {
-  "name": "Musea Virtual Exhibition",
-  "short_name": "Musea",
-  "start_url": "/",
+  "name": "VELORA — Virtual Exhibition World",
+  "short_name": "VELORA",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#17191d",
-  "theme_color": "#17191d",
-  "icons": []
+  "theme_color": "#17191d"
 }

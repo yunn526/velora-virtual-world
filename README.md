@@ -49,3 +49,9 @@ This repository uses GitHub Actions to build and deploy Vite to Pages.
    `https://yunn526.github.io/velora-virtual-world/`
 
 The Vite `base` path is configured for this repository's Pages URL.
+
+## Important: GitHub Pages must deploy the Vite build
+
+Do **not** publish the repository root directly. The root `index.html` is a Vite source file and references `src/main.jsx`. GitHub Pages must publish the generated `dist/` folder using the workflow in `.github/workflows/deploy.yml`.
+
+If Actions only shows the default **pages build and deployment** workflow, verify that `.github/workflows/deploy.yml` exists on the `main` branch and that the custom workflow has run successfully.

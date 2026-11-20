@@ -4,6 +4,6 @@ import App from './App.jsx';
 import './style.css';
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(console.warn));
+  window.addEventListener('load', () => navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(console.warn));
 }
 createRoot(document.getElementById('root')).render(<App />);
