@@ -11,6 +11,7 @@ import {
   browserLocalPersistence,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -21,10 +22,11 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
 };
 
-const requiredConfig = ['apiKey', 'authDomain', 'projectId', 'appId'];
+const requiredConfig = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'appId'];
 export const configured = requiredConfig.every((key) => Boolean(firebaseConfig[key]));
 export let auth = null;
 export let db = null;
+export let storage = null;
 export let firebaseInitError = null;
 
 if (configured) {
@@ -32,6 +34,7 @@ if (configured) {
     const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
+    storage = getStorage(app);
   } catch (error) {
     firebaseInitError = error;
     console.error('VELORA Firebase initialization failed:', error);

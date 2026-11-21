@@ -10,7 +10,8 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, storage } from './firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 const emptyForm = {
   title: '',
@@ -18,6 +19,7 @@ const emptyForm = {
   category: '攝影',
   preferredFloor: '2',
   preferredZone: 'A',
+  artworks: [],
 };
 
 function explainFirestoreError(error) {
@@ -38,6 +40,9 @@ export default function ExhibitionStudio({ user, onClose }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [artworkTitle, setArtworkTitle] = useState('');
+  const [artworkDescription, setArtworkDescription] = useState('');
 
   const loadItems = useCallback(async () => {
     if (!db || !user?.uid) {
@@ -88,6 +93,7 @@ export default function ExhibitionStudio({ user, onClose }) {
       category: form.category,
       preferredFloor: Number(form.preferredFloor),
       preferredZone: form.preferredZone,
+      artworks: form.artworks || [],
       status: 'draft',
       updatedAt: serverTimestamp(),
     };
@@ -110,6 +116,37 @@ export default function ExhibitionStudio({ user, onClose }) {
     }
   };
 
+  const uploadArtwork = async (file) => {
+    if (!file || !user?.uid || !storage) { setError('Firebase Storage 尚未初始化。'); return; }
+    if (!file.type.startsWith('image/')) { setError('請選擇圖片檔案。'); return; }
+    if (file.size > 10 * 1024 * 1024) { setError('圖片不可超過 10 MB。'); return; }
+    setUploading(true); setError('');
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `artworks/${user.uid}/${Date.now()}_${safeName}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file, { contentType: file.type });
+      const url = await getDownloadURL(storageRef);
+      setForm((current) => ({ ...current, artworks: [...(current.artworks || []), { id: path, title: artworkTitle.trim() || file.name, description: artworkDescription.trim(), imageUrl: url, storagePath: path, fileName: file.name, createdAt: new Date().toISOString() }] }));
+      setArtworkTitle(''); setArtworkDescription(''); setNotice('作品圖片已上傳並加入展覽草稿。');
+    } catch (uploadError) { setError(explainFirestoreError(uploadError)); }
+    finally { setUploading(false); }
+  };
+
+  const removeArtwork = async (artwork) => {
+    if (!window.confirm(`移除作品「${artwork.title}」？`)) return;
+    try { if (artwork.storagePath && storage) await deleteObject(ref(storage, artwork.storagePath)); } catch (_) {}
+    setForm((current) => ({ ...current, artworks: (current.artworks || []).filter((a) => a.id !== artwork.id) }));
+  };
+
+  const togglePublish = async (item) => {
+    if (item.status !== 'published' && !(item.artworks || []).length) { setError('至少上傳一件作品，才能發布展覽。'); return; }
+    try {
+      await updateDoc(doc(db, 'exhibitions', item.id), { status: item.status === 'published' ? 'draft' : 'published', publishedAt: item.status === 'published' ? null : serverTimestamp(), updatedAt: serverTimestamp() });
+      setNotice(item.status === 'published' ? '展覽已撤回，改為草稿。' : '展覽已公開發布！'); await loadItems();
+    } catch (publishError) { setError(explainFirestoreError(publishError)); }
+  };
+
   const edit = (item) => {
     setEditingId(item.id);
     setForm({
@@ -118,6 +155,7 @@ export default function ExhibitionStudio({ user, onClose }) {
       category: item.category || '攝影',
       preferredFloor: String(item.preferredFloor || 2),
       preferredZone: item.preferredZone || 'A',
+      artworks: item.artworks || [],
     });
     setError('');
     setNotice('正在編輯展覽草稿。');
@@ -163,25 +201,28 @@ export default function ExhibitionStudio({ user, onClose }) {
             <label>預計樓層<select value={form.preferredFloor} onChange={(event) => setField('preferredFloor', event.target.value)}><option value="2">2F</option><option value="3">3F</option><option value="4">4F</option></select></label>
             <label>預計展區<select value={form.preferredZone} onChange={(event) => setField('preferredZone', event.target.value)}><option value="A">A 西翼</option><option value="B">B 北翼</option><option value="C">C 東翼</option></select></label>
           </div>
-          <div className="studio-upload-note"><b>作品圖片上傳</b><span>下一步接入圖片儲存服務；目前先建立展覽資料與草稿，避免圖片尚未儲存就誤以為已上傳。</span></div>
+          <div className="studio-upload-note"><b>作品管理 · {(form.artworks || []).length} 件</b><span>上傳 JPG、PNG、WebP；單張最大 10 MB。圖片會儲存至 Firebase Storage。</span></div>
+          <div className="artwork-upload-fields"><label>作品名稱<input value={artworkTitle} onChange={(e) => setArtworkTitle(e.target.value)} placeholder="作品名稱（可留空）" /></label><label>作品介紹<textarea rows="2" value={artworkDescription} onChange={(e) => setArtworkDescription(e.target.value)} placeholder="作品簡介（選填）" /></label><label className="upload-button">{uploading ? '上傳中…' : '選擇圖片並上傳'}<input type="file" accept="image/*" disabled={uploading} onChange={(e) => { const file=e.target.files?.[0]; if(file) uploadArtwork(file); e.target.value=''; }} /></label></div>
+          {(form.artworks || []).length > 0 && <div className="artwork-grid">{form.artworks.map((art) => <article className="artwork-card" key={art.id}><img src={art.imageUrl} alt={art.title}/><div><b>{art.title}</b><small>{art.description || '尚未填寫作品介紹'}</small><button type="button" className="danger" onClick={() => removeArtwork(art)}>移除作品</button></div></article>)}</div>}
           <div className="studio-actions">
             {editingId && <button type="button" className="studio-secondary" onClick={() => { setEditingId(null); setForm(emptyForm); setNotice('已取消編輯。'); }}>取消編輯</button>}
             <button type="submit" className="studio-primary" disabled={saving}>{saving ? '儲存中…' : editingId ? '儲存變更' : '建立展覽草稿'}</button>
           </div>
         </form>
 
-        <div className="studio-list-heading"><h3>我的展覽</h3><span>{items.length} 份草稿／紀錄</span></div>
+        <div className="studio-list-heading"><h3>我的展覽</h3><span>{items.length} 個展覽 · {items.filter(x => x.status === 'published').length} 個公開 · {items.reduce((sum,x) => sum + (x.artworks || []).length,0)} 件作品</span></div>
         {loading ? <div className="studio-empty">正在載入展覽資料…</div> : items.length === 0 ? <div className="studio-empty">目前還沒有展覽。建立第一份展覽草稿吧！</div> : (
           <div className="studio-list">
             {items.map((item) => (
               <article className="studio-item" key={item.id}>
                 <div className="studio-item-main">
-                  <span className="studio-draft">草稿</span>
+                  <span className={`studio-draft ${item.status === 'published' ? 'published' : ''}`}>{item.status === 'published' ? '已公開' : '草稿'}</span>
                   <h4>{item.title}</h4>
                   <p>{item.description || '尚未填寫展覽介紹'}</p>
-                  <small>{item.category} · {item.preferredFloor || 2}F · {item.preferredZone || 'A'} 展區</small>
+                  <small>{item.category} · {item.preferredFloor || 2}F · {item.preferredZone || 'A'} 展區 · {(item.artworks || []).length} 件作品</small>
                 </div>
                 <div className="studio-item-actions">
+                  <button onClick={() => togglePublish(item)}>{item.status === 'published' ? '撤回' : '發布'}</button>
                   <button onClick={() => edit(item)}>編輯</button>
                   <button className="danger" onClick={() => remove(item)}>刪除</button>
                 </div>

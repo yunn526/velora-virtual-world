@@ -123,3 +123,26 @@ velora-virtual-world/
 - Lobby stair switchback moved into the central circulation area to avoid the reception seating.
 
 If Google sign-in still fails, the welcome screen displays the Firebase error code and detail. Use that code to troubleshoot the exact configuration rather than changing settings blindly.
+
+## Phase 3–6 integrated features
+- Exhibition artwork uploads use Firebase Storage (`artworks/{uid}/...`) and store metadata/download URLs on the exhibition document.
+- Creator Studio supports artwork removal, publishing and withdrawing exhibitions.
+- Public Exhibitions lists published records and opens an exhibition artwork viewer.
+- Deploy the included `firestore.rules` to Firestore Rules and `storage.rules` to Firebase Storage Rules before testing uploads/publication.
+- Firebase Storage must be enabled in the project. Upload limit: 10 MB/image.
+- Published exhibition documents are readable publicly; draft records remain owner-only.
+
+## GitHub Actions Firebase configuration
+The deploy workflow accepts either Repository Variables or Repository Secrets. For each key, it checks `vars.KEY` first and falls back to `secrets.KEY`:
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+
+## Firebase Rules deployment
+1. Firebase Console → Firestore Database → Rules: publish the included `firestore.rules`.
+2. Firebase Console → Storage → Rules: publish the included `storage.rules`.
+3. Confirm Firebase Storage is enabled for the same project as Authentication and Firestore.
+4. GitHub Actions deploys the static frontend. Firebase rules are deployed manually from Console in this release.

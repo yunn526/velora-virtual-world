@@ -16,6 +16,7 @@ import {
 } from './firebase';
 import World from './World.jsx';
 import ExhibitionStudio from './ExhibitionStudio.jsx';
+import PublicExhibitions from './PublicExhibitions.jsx';
 
 const floors = [
   { n: 1, title: 'MAIN LOBBY', zh: '大廳與服務中心', detail: '入口大廳及 3 個展示區' },
@@ -68,6 +69,7 @@ export default function App() {
   const [showControls, setShowControls] = useState(true);
   const [locked, setLocked] = useState(false);
   const [showStudio, setShowStudio] = useState(false);
+  const [showPublic, setShowPublic] = useState(false);
 
   useEffect(() => {
     if (!configured || !auth) {
@@ -198,6 +200,7 @@ export default function App() {
         <div className="account">
           <span>{user.displayName || user.email || 'Explorer'}</span>
           {!user.isDemo && <button onClick={() => { setLocked(false); setShowStudio(true); }}>我的展覽</button>}
+          <button onClick={() => { setLocked(false); setShowPublic(true); }}>公開展覽</button>
           <button onClick={logout}>離開</button>
         </div>
       </header>
@@ -236,6 +239,7 @@ export default function App() {
         </div>
       )}
       {showStudio && !user.isDemo && <ExhibitionStudio user={user} onClose={() => setShowStudio(false)} />}
+      {showPublic && <PublicExhibitions onClose={() => setShowPublic(false)} />}
     </div>
   );
 }

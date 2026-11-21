@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /exhibitions/{exhibitionId} {
-      // Users can only create their own private draft records.
       allow create: if request.auth != null
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.status == 'draft'
@@ -13,16 +12,12 @@ service cloud.firestore {
         && request.resource.data.description.size() <= 500
         && request.resource.data.preferredFloor in [2, 3, 4]
         && request.resource.data.preferredZone in ['A', 'B', 'C'];
-
-      // A user can list and read only their own exhibition records.
-      allow get, list: if request.auth != null
-        && resource.data.ownerUid == request.auth.uid;
-
-      // Drafts remain private and owned by the same account.
+      allow get, list: if (request.auth != null && resource.data.ownerUid == request.auth.uid)
+        || resource.data.status == 'published';
       allow update: if request.auth != null
         && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == resource.data.ownerUid
-        && request.resource.data.status == 'draft'
+        && request.resource.data.status in ['draft', 'published']
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 80
@@ -30,9 +25,7 @@ service cloud.firestore {
         && request.resource.data.description.size() <= 500
         && request.resource.data.preferredFloor in [2, 3, 4]
         && request.resource.data.preferredZone in ['A', 'B', 'C'];
-
-      allow delete: if request.auth != null
-        && resource.data.ownerUid == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.ownerUid == request.auth.uid;
     }
   }
 }
