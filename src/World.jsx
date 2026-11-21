@@ -110,33 +110,114 @@ function PortalFrame({ position, rotation = [0, 0, 0], width = 5.3, height = 4.5
 }
 
 function ElevatorLanding({ y }) {
+  // A simple, clearly readable elevator bay: metal frame, two sliding doors and call panel.
   return (
     <group>
-      <Box position={[-4.9, y + 2.25, 9.9]} size={[3.35, 4.5, 0.22]} color="#b6b8b6" metalness={0.28} />
-      <Box position={[-6.55, y + 2.25, 10.95]} size={[0.22, 4.5, 2.1]} color="#aeb1b0" metalness={0.28} />
-      <Box position={[-3.25, y + 2.25, 10.95]} size={[0.22, 4.5, 2.1]} color="#aeb1b0" metalness={0.28} />
-      <Box position={[-4.9, y + 2.2, 12.02]} size={[1.55, 4.38, 0.08]} color="#777b7b" metalness={0.35} />
-      <Box position={[-5.7, y + 2.2, 11.96]} size={[1.45, 4.25, 0.1]} color="#c6c8c6" metalness={0.45} />
-      <Box position={[-4.1, y + 2.2, 11.96]} size={[1.45, 4.25, 0.1]} color="#c6c8c6" metalness={0.45} />
-      <Box position={[-4.9, y + 4.15, 11.88]} size={[0.42, 0.22, 0.08]} color="#d9c8a9" emissive="#8f7651" emissiveIntensity={0.16} />
-      <Box position={[-4.9, y + 2.2, 11.88]} size={[0.035, 4.0, 0.045]} color="#8c8d89" />
+      <Box position={[-6.45, y + 1.72, 11.72]} size={[0.18, 3.44, 0.22]} color="#aeb2b1" metalness={0.34} />
+      <Box position={[-3.82, y + 1.72, 11.72]} size={[0.18, 3.44, 0.22]} color="#aeb2b1" metalness={0.34} />
+      <Box position={[-5.135, y + 3.42, 11.72]} size={[2.76, 0.18, 0.22]} color="#c4c5c1" metalness={0.3} />
+      <Box position={[-5.135, y + 1.62, 11.82]} size={[2.32, 3.08, 0.08]} color="#45494a" />
+      <Box position={[-5.72, y + 1.62, 11.72]} size={[1.12, 2.92, 0.09]} color="#bfc1bf" metalness={0.42} />
+      <Box position={[-4.55, y + 1.62, 11.72]} size={[1.12, 2.92, 0.09]} color="#bfc1bf" metalness={0.42} />
+      <Box position={[-5.135, y + 1.62, 11.65]} size={[0.035, 2.8, 0.025]} color="#747977" />
+      <Box position={[-3.52, y + 1.22, 11.68]} size={[0.24, 0.56, 0.08]} color="#6e7777" metalness={0.25} />
+      <Box position={[-3.52, y + 1.48, 11.62]} size={[0.08, 0.08, 0.035]} color="#d9c49e" emissive="#9f8156" emissiveIntensity={0.28} />
+      <Box position={[-5.135, y + 3.76, 11.68]} size={[0.92, 0.28, 0.12]} color="#353a3b" />
+      <Box position={[-5.135, y + 3.78, 11.60]} size={[0.42, 0.06, 0.025]} color="#d8c29a" emissive="#b18e5b" emissiveIntensity={0.25} />
     </group>
   );
 }
 
+function RailSegment({ start, end }) {
+  const rail = useMemo(() => {
+    const a = new THREE.Vector3(...start);
+    const b = new THREE.Vector3(...end);
+    const direction = new THREE.Vector3().subVectors(b, a);
+    const position = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+    return { position, quaternion, length: direction.length() };
+  }, [start, end]);
+  return (
+    <mesh position={rail.position} quaternion={rail.quaternion} castShadow>
+      <cylinderGeometry args={[0.055, 0.055, rail.length, 10]} />
+      <meshStandardMaterial color="#766b5e" metalness={0.18} roughness={0.62} />
+    </mesh>
+  );
+}
+
+function StairPost({ position }) {
+  return (
+    <mesh position={position} castShadow>
+      <cylinderGeometry args={[0.035, 0.035, 0.9, 8]} />
+      <meshStandardMaterial color="#857a6c" metalness={0.12} roughness={0.65} />
+    </mesh>
+  );
+}
+
 function StairFlight({ baseY }) {
-  const steps = 14;
-  const run = 7.2;
-  const rise = FLOOR_HEIGHT / steps;
+  // U-shaped switchback stair: two moderate flights with a proper intermediate landing.
+  const stepsPerFlight = 15;
+  const halfRise = FLOOR_HEIGHT / 2;
+  const rise = halfRise / stepsPerFlight;
+  const tread = 0.30;
+  const width = 1.62;
+  // Place the switchback in the central circulation core, away from lobby seating.
+  const lowerX = 3.1;
+  const upperX = 5.37;
+  const startZ = 9.5;
+  const middleZ = startZ - stepsPerFlight * tread;
+  const railOffset = width / 2 + 0.13;
+  const posts = [];
+
+  for (let i = 0; i < stepsPerFlight; i += 4) {
+    const stepY = baseY + (i + 1) * rise + 0.43;
+    const lowerZ = startZ - (i + 1) * tread;
+    const upperZ = middleZ + (i + 1) * tread;
+    posts.push(<StairPost key={`lp-${i}`} position={[lowerX - railOffset, stepY, lowerZ]} />);
+    posts.push(<StairPost key={`rp-${i}`} position={[lowerX + railOffset, stepY, lowerZ]} />);
+    posts.push(<StairPost key={`up-lp-${i}`} position={[upperX - railOffset, baseY + halfRise + (i + 1) * rise + 0.43, upperZ]} />);
+    posts.push(<StairPost key={`up-rp-${i}`} position={[upperX + railOffset, baseY + halfRise + (i + 1) * rise + 0.43, upperZ]} />);
+  }
+
   return (
     <group>
-      {Array.from({ length: steps }, (_, i) => {
-        const h = (i + 1) * rise;
-        const z = 15.15 - (i + 0.5) * (run / steps);
-        return <Box key={i} position={[4.75, baseY + h / 2, z]} size={[2.45, h, run / steps + 0.025]} color={i % 2 ? '#c8bdae' : '#d6cbbb'} />;
+      {/* Bottom and upper landings */}
+      <Box position={[(lowerX + upperX) / 2, baseY + 0.04, startZ + 0.45]} size={[4.18, 0.16, 1.05]} color="#d5cfc5" />
+      <Box position={[(lowerX + upperX) / 2, baseY + halfRise, middleZ - 0.48]} size={[4.18, 0.16, 1.15]} color="#d5cfc5" />
+      <Box position={[(lowerX + upperX) / 2, baseY + FLOOR_HEIGHT - 0.04, startZ + 0.45]} size={[4.18, 0.16, 1.05]} color="#d5cfc5" />
+
+      {/* First flight rises towards the north. */}
+      {Array.from({ length: stepsPerFlight }, (_, i) => {
+        const levelY = (i + 1) * rise;
+        const stepZ = startZ - (i + 0.5) * tread;
+        const riserZ = startZ - (i + 1) * tread + 0.035;
+        return (
+          <group key={`lower-step-${i}`}>
+            <Box position={[lowerX, baseY + levelY - 0.07, stepZ]} size={[width, 0.14, tread]} color={i % 2 ? '#d5ccbe' : '#c9bdad'} />
+            <Box position={[lowerX, baseY + levelY - rise / 2, riserZ]} size={[width, rise, 0.07]} color="#b8ad9e" />
+          </group>
+        );
       })}
-      <Box position={[3.45, baseY + FLOOR_HEIGHT / 2 + 0.12, 11.55]} size={[0.1, 0.12, run + 0.2]} color="#887b6b" rotation={[-Math.atan2(FLOOR_HEIGHT, run), 0, 0]} />
-      <Box position={[6.05, baseY + FLOOR_HEIGHT / 2 + 0.12, 11.55]} size={[0.1, 0.12, run + 0.2]} color="#887b6b" rotation={[-Math.atan2(FLOOR_HEIGHT, run), 0, 0]} />
+
+      {/* Second flight returns south, completing the switchback. */}
+      {Array.from({ length: stepsPerFlight }, (_, i) => {
+        const levelY = halfRise + (i + 1) * rise;
+        const stepZ = middleZ + (i + 0.5) * tread;
+        const riserZ = middleZ + (i + 1) * tread - 0.035;
+        return (
+          <group key={`upper-step-${i}`}>
+            <Box position={[upperX, baseY + levelY - 0.07, stepZ]} size={[width, 0.14, tread]} color={i % 2 ? '#d5ccbe' : '#c9bdad'} />
+            <Box position={[upperX, baseY + levelY - rise / 2, riserZ]} size={[width, rise, 0.07]} color="#b8ad9e" />
+          </group>
+        );
+      })}
+
+      {/* Sloped handrails */}
+      <RailSegment start={[lowerX - railOffset, baseY + 0.88, startZ + 0.04]} end={[lowerX - railOffset, baseY + halfRise + 0.88, middleZ - 0.04]} />
+      <RailSegment start={[lowerX + railOffset, baseY + 0.88, startZ + 0.04]} end={[lowerX + railOffset, baseY + halfRise + 0.88, middleZ - 0.04]} />
+      <RailSegment start={[upperX - railOffset, baseY + halfRise + 0.88, middleZ + 0.04]} end={[upperX - railOffset, baseY + FLOOR_HEIGHT + 0.88, startZ - 0.04]} />
+      <RailSegment start={[upperX + railOffset, baseY + halfRise + 0.88, middleZ + 0.04]} end={[upperX + railOffset, baseY + FLOOR_HEIGHT + 0.88, startZ - 0.04]} />
+      {posts}
     </group>
   );
 }
@@ -169,14 +250,14 @@ function ExhibitionWing({ level, zone }) {
   if (zone === 0) {
     return (
       <group>
-        {[-11.5, -5.5, 5.5, 11.5].map((z, i) => <Artwork key={`outer-${i}`} position={[-23.78, 2.65, z]} rotation={[0, Math.PI / 2, 0]} palette={palettes} />)}
-        {[-11, -5, 5, 11].map((z, i) => <Artwork key={`inner-${i}`} position={[-7.22, 2.65, z]} rotation={[0, -Math.PI / 2, 0]} palette={palettes} />)}
-        {[-20.5, -15, -9.5].map((x, i) => <Artwork key={`back-${i}`} position={[x, 2.65, -17.78]} palette={palettes} size={0.92} />)}
-        <GallerySculpture position={[-16, y, 1.0]} tint={palettes[0]} shape={level} />
-        <GallerySculpture position={[-11.5, y, -7.0]} tint={palettes[1]} shape={level + 1} />
-        <Bench position={[-15.8, y, 9.2]} />
-        <Plant position={[-21.0, y, 13.1]} scale={0.9} />
-        <Plant position={[-9.8, y, 13.1]} scale={0.9} />
+        {/* West wing: a clear central viewing aisle, art on both long walls. */}
+        {[-12, -4, 4, 12].map((z, i) => <Artwork key={`outer-${i}`} position={[-23.78, 2.65, z]} rotation={[0, Math.PI / 2, 0]} palette={palettes} />)}
+        {[-12, -4, 4, 12].map((z, i) => <Artwork key={`inner-${i}`} position={[-7.22, 2.65, z]} rotation={[0, -Math.PI / 2, 0]} palette={palettes} />)}
+        {[-19.5, -13.8, -8.2].map((x, i) => <Artwork key={`back-${i}`} position={[x, 2.65, -17.78]} palette={palettes} size={0.9} />)}
+        <GallerySculpture position={[-18.5, y, -6.8]} tint={palettes[0]} shape={level} />
+        <Bench position={[-15.7, y, 12.8]} />
+        <Plant position={[-21.2, y, 15.0]} scale={0.82} />
+        <Plant position={[-9.8, y, 15.0]} scale={0.82} />
       </group>
     );
   }
@@ -184,28 +265,28 @@ function ExhibitionWing({ level, zone }) {
   if (zone === 1) {
     return (
       <group>
-        {[-4.4, 0, 4.4].map((x, i) => <Artwork key={`back-${i}`} position={[x, 2.65, -17.78]} palette={palettes} size={0.95} />)}
-        {[-14.3, -9.5].map((z, i) => <Artwork key={`left-${i}`} position={[-6.78, 2.65, z]} rotation={[0, Math.PI / 2, 0]} palette={palettes} size={0.88} />)}
-        {[-14.3, -9.5].map((z, i) => <Artwork key={`right-${i}`} position={[6.78, 2.65, z]} rotation={[0, -Math.PI / 2, 0]} palette={palettes} size={0.88} />)}
-        <GallerySculpture position={[0, y, -11.5]} tint={palettes[0]} shape={level + 2} />
-        <GallerySculpture position={[-4.2, y, -9.2]} tint={palettes[1]} shape={level} />
-        <Bench position={[0, y, -7.1]} rotation={Math.PI} scale={0.85} />
-        <Plant position={[-5.2, y, -16.0]} scale={0.72} />
-        <Plant position={[5.2, y, -16.0]} scale={0.72} />
+        {/* North wing: keep the middle line open from the entrance to the feature wall. */}
+        {[-4.2, 0, 4.2].map((x, i) => <Artwork key={`back-${i}`} position={[x, 2.65, -17.78]} palette={palettes} size={0.92} />)}
+        {[-14.2, -10.0].map((z, i) => <Artwork key={`left-${i}`} position={[-6.78, 2.65, z]} rotation={[0, Math.PI / 2, 0]} palette={palettes} size={0.84} />)}
+        {[-14.2, -10.0].map((z, i) => <Artwork key={`right-${i}`} position={[6.78, 2.65, z]} rotation={[0, -Math.PI / 2, 0]} palette={palettes} size={0.84} />)}
+        <GallerySculpture position={[-3.9, y, -13.0]} tint={palettes[0]} shape={level + 2} />
+        <Bench position={[3.9, y, -12.7]} rotation={Math.PI / 2} scale={0.82} />
+        <Plant position={[-5.4, y, -16.0]} scale={0.72} />
+        <Plant position={[5.4, y, -16.0]} scale={0.72} />
       </group>
     );
   }
 
   return (
     <group>
-      {[-11.5, -5.5, 5.5, 11.5].map((z, i) => <Artwork key={`outer-${i}`} position={[23.78, 2.65, z]} rotation={[0, -Math.PI / 2, 0]} palette={palettes} />)}
-      {[-11, -5, 5, 11].map((z, i) => <Artwork key={`inner-${i}`} position={[7.22, 2.65, z]} rotation={[0, Math.PI / 2, 0]} palette={palettes} />)}
-      {[-20.5, -15, -9.5].map((x, i) => <Artwork key={`back-${i}`} position={[x, 2.65, -17.78]} palette={palettes} size={0.92} />)}
-      <GallerySculpture position={[16, y, 1.0]} tint={palettes[0]} shape={level + 1} />
-      <GallerySculpture position={[11.5, y, -7.0]} tint={palettes[1]} shape={level + 2} />
-      <Bench position={[15.8, y, 9.2]} />
-      <Plant position={[21.0, y, 13.1]} scale={0.9} />
-      <Plant position={[9.8, y, 13.1]} scale={0.9} />
+      {/* East wing mirrors the west wing with a spacious centre aisle. */}
+      {[-12, -4, 4, 12].map((z, i) => <Artwork key={`outer-${i}`} position={[23.78, 2.65, z]} rotation={[0, -Math.PI / 2, 0]} palette={palettes} />)}
+      {[-12, -4, 4, 12].map((z, i) => <Artwork key={`inner-${i}`} position={[7.22, 2.65, z]} rotation={[0, Math.PI / 2, 0]} palette={palettes} />)}
+      {[-19.5, -13.8, -8.2].map((x, i) => <Artwork key={`back-${i}`} position={[x, 2.65, -17.78]} palette={palettes} size={0.9} />)}
+      <GallerySculpture position={[18.5, y, -6.8]} tint={palettes[0]} shape={level + 1} />
+      <Bench position={[15.7, y, 12.8]} />
+      <Plant position={[21.2, y, 15.0]} scale={0.82} />
+      <Plant position={[9.8, y, 15.0]} scale={0.82} />
     </group>
   );
 }
@@ -255,22 +336,24 @@ function FloorLevel({ level }) {
 
       {/* Central public hall: the first floor is the main reception, upper levels are lounges. */}
       <Box position={[0, 0.025, 4.5]} size={[8.8, 0.05, 8.2]} color={isLobby ? '#c6b59e' : '#c9c3ba'} />
-      <GallerySculpture position={[0, 0, 3.5]} tint={isFeatured ? '#b89366' : '#a58c75'} shape={level + 1} />
-      <Bench position={[-1.8, 0, 14.2]} rotation={Math.PI} scale={0.82} />
-      <Bench position={[1.8, 0, 14.2]} rotation={Math.PI} scale={0.82} />
-      <Plant position={[-6.1, 0, 15.0]} scale={0.82} />
-      <Plant position={[6.1, 0, 15.0]} scale={0.82} />
+      <Box position={[0, 0.056, 4.5]} size={[5.9, 0.012, 6.5]} color="#e2d9cb" />
+      {/* Keep the central route open; seating and greenery stay against the side edges. */}
+      <GallerySculpture position={[-2.55, 0, 2.1]} tint={isFeatured ? '#b89366' : '#a58c75'} shape={level + 1} />
+      <Bench position={[-1.75, 0, 15.0]} rotation={Math.PI} scale={0.78} />
+      <Bench position={[1.85, 0, 15.0]} rotation={Math.PI} scale={0.78} />
+      <Plant position={[-6.0, 0, 16.0]} scale={0.72} />
+      <Plant position={[1.9, 0, 16.4]} scale={0.72} />
 
       {isLobby ? (
         <group>
-          <Box position={[0, 0.72, 7.2]} size={[4.8, 1.44, 1.25]} color="#8d7966" />
-          <Box position={[0, 1.48, 7.2]} size={[5.0, 0.16, 1.4]} color="#eee5d8" />
-          <Box position={[0, 2.68, 7.05]} size={[3.2, 0.72, 0.16]} color="#c9ad84" />
+          <Box position={[-2.45, 0.72, 8.0]} size={[2.9, 1.44, 1.05]} color="#8d7966" />
+          <Box position={[-2.45, 1.48, 8.0]} size={[3.05, 0.16, 1.2]} color="#eee5d8" />
+          <Box position={[-2.45, 2.54, 7.94]} size={[2.15, 0.68, 0.14]} color="#c9ad84" />
         </group>
       ) : (
         <group>
-          <Box position={[0, 0.52, 7.2]} size={[3.6, 1.04, 0.78]} color="#a9957e" />
-          <Box position={[0, 1.1, 7.2]} size={[3.8, 0.12, 0.9]} color="#ece4d8" />
+          <Box position={[-2.5, 0.48, 8.0]} size={[2.7, 0.96, 0.72]} color="#a9957e" />
+          <Box position={[-2.5, 1.02, 8.0]} size={[2.85, 0.12, 0.84]} color="#ece4d8" />
         </group>
       )}
 

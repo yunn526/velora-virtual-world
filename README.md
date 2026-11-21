@@ -8,14 +8,17 @@ VELORA is a 3D virtual exhibition world built as a Progressive Web App (PWA). Vi
 
 - Five-floor 3D exhibition building
 - Three exhibition zones per floor: A / West Wing, B / North Wing, C / East Wing
-- Central public hall, reception/lounge, artwork walls, sculptures, benches and plants
+- Central public hall, three independent exhibition zones per floor
+- A clearer U-shaped switchback staircase with a proper intermediate landing and handrails
+- Refined seating, plants, reception placement and clearer central walking route
 - Floor and gallery quick-navigation panel
 - Desktop WASD / arrow-key movement, mouse look and Shift sprint
-- Firebase Google Authentication integration point
+- Firebase Google Authentication with readable error codes and mobile redirect fallback
+- Phase 2 exhibition draft manager backed by Firestore
 - GitHub Pages deployment via GitHub Actions
 - PWA manifest and service worker foundation
 
-**Movement tuning is intentionally preserved** in this version because the current WASD feel has been approved. Do not change `ExplorerMovement` unless a movement-specific issue is reported.
+**Movement tuning is intentionally preserved** in this version because the current WASD feel has been approved. The movement controller itself was not modified.
 
 ## Floor Plan
 
@@ -52,9 +55,20 @@ Floors 2F–4F are planned as rotating user exhibition areas. Daily or weekly ro
    - `VITE_FIREBASE_APP_ID`
 7. Push a commit to `main` to trigger a fresh deployment.
 
-Firebase Web App configuration is intended to be present in the client. Protect the project with Firebase Authentication settings and, when Firestore/Storage are added in later phases, restrictive Security Rules. Never place service-account private keys in frontend variables.
+Firebase Web App configuration is intended to be present in the client. The current project includes Firestore access for private exhibition drafts. Apply the included `firestore.rules` in Firebase Console → Firestore Database → Rules before using the exhibition studio. Never place service-account private keys in frontend variables.
 
 Until the Firebase values are configured and deployed, the Google login button will explain that setup is pending; the **Preview mode** remains available for testing the 3D gallery.
+
+## Phase 2 — Exhibition drafts (first milestone)
+
+The current Phase 2 milestone lets a signed-in user create, edit, list and delete private exhibition drafts. Each draft stores its title, introduction, category and preferred floor/zone in Firestore. Drafts are private to their owner and are not automatically published or scheduled.
+
+1. In Firebase Console, create a **Cloud Firestore** database.
+2. Choose a suitable region and start with the locked/production rules option.
+3. Open the Firestore **Rules** tab and paste the contents of `firestore.rules`, then publish.
+4. Deploy the updated website. Sign in with Google and open **我的展覽**.
+
+Image upload, public exhibition display, administrator scheduling and automatic floor rotation are later Phase 2 steps. Cloud Storage for newly created Firebase projects currently requires the Blaze billing plan; do not enable billing just for testing. Review any billing change with a parent or guardian first. This release does not upload image files.
 
 ## GitHub Pages deployment
 
@@ -69,7 +83,7 @@ The workflow builds the Vite app and deploys only the generated `dist/` director
 ## Planned phases
 
 - **Phase 1:** 3D world, five floors, three zones per floor, movement, PWA foundation and Google authentication.
-- **Phase 2:** User exhibitions, artwork uploads, exhibition editing, expiry and admin scheduling.
+- **Phase 2:** Exhibition drafts are included in this release; image uploads, public display, expiry and admin scheduling remain to be implemented.
 - **Phase 3:** Daily check-in, seven-day new-user rewards, gems and leaderboards.
 - **Phase 4:** Furniture shop and customizable exhibition spaces.
 - **Phase 5:** Co-curation, invitations and official exhibitions.
@@ -86,13 +100,26 @@ velora-virtual-world/
 │   └── sw.js
 ├── src/
 │   ├── App.jsx
+│   ├── ExhibitionStudio.jsx
 │   ├── World.jsx
 │   ├── firebase.js
 │   ├── main.jsx
 │   └── style.css
 ├── .env.example
+├── firestore.rules
 ├── .gitignore
 ├── index.html
 ├── package.json
 └── vite.config.js
 ```
+
+
+## Phase 2 progress (initial)
+
+- Exhibition Studio: create, edit, and delete Firestore exhibition drafts.
+- Draft fields: title, description, category, preferred floor, preferred zone.
+- Image upload and in-world artwork placement are not included yet.
+- Auth popup fallback: redirect flow is attempted for popup-blocking / unsupported browser errors.
+- Lobby stair switchback moved into the central circulation area to avoid the reception seating.
+
+If Google sign-in still fails, the welcome screen displays the Firebase error code and detail. Use that code to troubleshoot the exact configuration rather than changing settings blindly.
